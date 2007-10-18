@@ -18,14 +18,7 @@ sub new {
     return $self;
 }
 
-sub action {
-    my $self = shift;
-    my $presence = shift;
-
-    print Dumper($presence);
-
-    return 1;
-}
+sub action { return 1; }
 
 1;
 

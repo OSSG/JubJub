@@ -28,10 +28,15 @@ sub new {
 	exit;
     }
 
-# для предотвращения автоматического разрыва умным mysql соединения по тайм-ауту (т.н. 'morning bug')
-    ${$self->{'database'}}->{'mysql_auto_reconnect'} = 1 if ($config->{'driver'} eq 'mysql');
-
     $self = bless($self, $package);
+
+# ряд специфичный mysql-ных настроек
+    if ($config->{'driver'} eq 'mysql') {
+# для предотвращения автоматического разрыва умным mysql соединения по тайм-ауту (т.н. 'morning bug')
+	${$self->{'database'}}->{'mysql_auto_reconnect'} = 1;
+	$self->sql_exec([0], 'set names utf8');
+	$self->sql_exec([0], 'set character set utf8');
+    }
 
     return $self;
 }

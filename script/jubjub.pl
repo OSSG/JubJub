@@ -34,13 +34,13 @@ unless (-f $options->{'config'}) {
 
 $config = XMLin($options->{'config'}, 'ForceArray' => ['processor'], 'KeyAttr' => ['type'], 'ContentKey' => '-content');
 
-my $db = JubJub::DB->new($config->{'database_connection'});
-my $jab_conn = new Net::Jabber::Component();
-$jab_conn->SetCallBacks( 'receive' => \&processor );
-
 $SIG{HUP} = $SIG{KILL} = $SIG{TERM} = $SIG{INT} = \&_disconnect;
 
 exit if fork();
+
+my $db = JubJub::DB->new($config->{'database_connection'});
+my $jab_conn = new Net::Jabber::Component();
+$jab_conn->SetCallBacks( 'receive' => \&processor );
 
 my $procs = {};
 

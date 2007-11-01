@@ -14,29 +14,29 @@ sub new {
 # приготовление кеша запросов в БД
     $self->{'requests'} = {};
 
+    my $options = { 'RaiseError' => 1,
+		    'ChopBlanks' => 1,
+		    'AutoCommit' => 1 };
+
+# для предотвращения проблем с Unicode при работе с mysql
+    $options->{'mysql_enable_utf8'} = 1 if ($config->{'driver'} eq 'mysql');
+
 # установка соединения с начальной базой
     unless (${$self->{'database'}} = DBI->connect('dbi:' . $config->{'driver'} .
 					    ':dbname=' . $config->{'name'} .
 					    ';host=' . $config->{'host'},
 					    $config->{'user'},
 					    $config->{'passwd'},
-					    {	'RaiseError' => 1,
-						'ChopBlanks' => 1,
-						'AutoCommit' => 1 })) {
+					    $options)) {
 	print STDERR "Cann't connect to database server: $DBI::errstr";
         ${$self->{'database'}} = undef;
 	exit;
     }
 
-    $self = bless($self, $package);
-
-# ряд специфичный mysql-ных настроек
-    if ($config->{'driver'} eq 'mysql') {
 # для предотвращения автоматического разрыва умным mysql соединения по тайм-ауту (т.н. 'morning bug')
-	${$self->{'database'}}->{'mysql_auto_reconnect'} = 1;
-	$self->sql_exec([0], 'set names utf8');
-	$self->sql_exec([0], 'set character set utf8');
-    }
+    ${$self->{'database'}}->{'mysql_auto_reconnect'} = 1 if ($config->{'driver'} eq 'mysql');
+
+    $self = bless($self, $package);
 
     return $self;
 }

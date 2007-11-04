@@ -7,6 +7,7 @@ use Data::Dumper;
 use XML::Simple;
 use Encode qw(_utf8_off);
 use Getopt::Long qw(:config no_ignore_case bundling no_auto_abbrev);
+use POSIX;
 
 use JubJub::DB;
 
@@ -34,11 +35,54 @@ unless (-f $options->{'config'}) {
 
 $config = XMLin($options->{'config'}, 'ForceArray' => ['processor'], 'KeyAttr' => ['type'], 'ContentKey' => '-content');
 
+if (-f $config->{'service'}->{'pid_file'}) {
+    print STDERR "Found pid file $config->{'service'}->{'pid_file'}. JubJub already running?\n";
+    exit;
+}
+
+my $pid = fork();
+if ($pid) {
+    if (open(OUT, '>' . $config->{'service'}->{'pid_file'})) {
+	print OUT $pid;
+	close OUT;
+    }
+    else {
+	print STDERR "Can't open pid file: $!\n";
+    }
+    exit;
+}
+elsif (!defined $pid) {
+    print STDERR "Can't fork: $!\n";
+    exit;
+}
+
+
+for my $handle (*STDIN, *STDOUT) {
+    unless (open($handle, '+<', '/dev/null')) {
+	print STDERR "Can't reopen $handle to /dev/null : $!\n";
+	exit;
+    }
+}
+
+unless (open(*STDERR, '>>', $config->{'service'}->{'error_log'})) {
+    print STDERR "Can't reopen STDERR to $config->{'service'}->{'error_log'} : $!\n";
+    exit;
+}
+
+unless (POSIX::setsid()) {
+    print STDERR "Can't start a new session: $!\n";
+    exit;
+}
+
+my $db;
+unless ($db = JubJub::DB->new($config->{'database_connection'})) {
+    print STDERR "Can't open database connection: $DBI::errstr\n";
+    exit;
+}
+
 $SIG{HUP} = $SIG{KILL} = $SIG{TERM} = $SIG{INT} = \&_disconnect;
+$SIG{PIPE} = 'IGNORE';
 
-exit if fork();
-
-my $db = JubJub::DB->new($config->{'database_connection'});
 my $jab_conn = new Net::Jabber::Component();
 $jab_conn->SetCallBacks( 'receive' => \&processor );
 
@@ -66,8 +110,13 @@ sub processor {
 		    print STDERR "Error when switching on $_ processor: $@\n";
 		}
 		else {
-		    $procs->{$_} ||= $config->{'processors'}->{'processor'}->{$_}->new(\$db);
-		    $procs->{$_}->action($data->{$_});
+		    eval {
+			$procs->{$_} ||= $config->{'processors'}->{'processor'}->{$_}->new(\$db);
+			$procs->{$_}->action($data->{$_});
+		    };
+		    if ($@) {
+			print STDERR "Got error when used $_ processor: $@\n";
+		    }
 		}
 	    }
 	}
@@ -78,5 +127,6 @@ sub processor {
 sub _disconnect {
     undef $db if defined $db;
     $jab_conn->Disconnect() if defined $jab_conn;
+    unlink($config->{'service'}->{'pid_file'}) if (-f $config->{'service'}->{'pid_file'});
     exit;
 }

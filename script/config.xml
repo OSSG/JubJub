@@ -17,4 +17,8 @@
 	<processor type="message">JubJub::Message</processor>
 	<processor type="presence">JubJub::Presence</processor>
     </processors>
+    <service>
+	<pid_file>/var/run/jubjub/jubjub.pid</pid_file>
+	<error_log>/var/log/jubjub/error_log</error_log>
+    </service>
 </config>

@@ -15,8 +15,7 @@ sub new {
     $self->{'requests'} = {};
 
     my $options = { 'RaiseError' => 1,
-		    'ChopBlanks' => 1,
-		    'AutoCommit' => 1 };
+		    'ChopBlanks' => 1 };
 
 # для предотвращения проблем с Unicode при работе с mysql
     $options->{'mysql_enable_utf8'} = 1 if ($config->{'driver'} eq 'mysql');
@@ -65,6 +64,7 @@ sub sql_exec {
 	$self->{'requests'}->{$request}->finish();
 	delete $self->{'requests'}->{$request};
     }
+
     return $res;
 
 }

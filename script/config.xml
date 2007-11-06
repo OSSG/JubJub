@@ -5,6 +5,7 @@
 	<component>logger.somehost.somedomain</component>
 	<secret>abcdefghijklmnop</secret>
 	<port>5526</port>
+	<reconnect>yes</reconnect>
     </jabber_connection>
     <database_connection>
     	<host>localhost</host>

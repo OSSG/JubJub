@@ -83,17 +83,28 @@ unless ($db = JubJub::DB->new($config->{'database_connection'})) {
 $SIG{HUP} = $SIG{KILL} = $SIG{TERM} = $SIG{INT} = \&_disconnect;
 $SIG{PIPE} = 'IGNORE';
 
-my $jab_conn = new Net::Jabber::Component();
-$jab_conn->SetCallBacks( 'receive' => \&processor );
-
+my $jab_conn;
 my $procs = {};
+my $die_flag = ($config->{'jabber_connection'}->{'reconnect'} &&
+		    ($config->{'jabber_connection'}->{'reconnect'} ne 'no')) ? 0 : 1;
 
-$jab_conn->Execute(	'hostname' 	=> $config->{'jabber_connection'}->{'host'},
+do {
+
+    $jab_conn = new Net::Jabber::Component();
+
+    $jab_conn->SetCallBacks( 'receive' => \&processor );
+
+    $jab_conn->Execute(	'hostname' 	=> $config->{'jabber_connection'}->{'host'},
 			'componentname'	=> $config->{'jabber_connection'}->{'component'},
 			'secret'	=> $config->{'jabber_connection'}->{'secret'},
 			'connectiontype'=> 'tcpip',
 			'port'		=> $config->{'jabber_connection'}->{'port'}
-);
+    );
+
+    print STDERR '[' . localtime(time) . '] Lost connection.' .
+			    ($die_flag ? '' : ' Attempt to reconnect.') . "\n";
+
+} while (!$die_flag);
 
 _disconnect();
 

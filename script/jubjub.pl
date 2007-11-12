@@ -9,7 +9,12 @@ use Encode qw(_utf8_off);
 use Getopt::Long qw(:config no_ignore_case bundling no_auto_abbrev);
 use POSIX;
 
+use FindBin;
+use lib $FindBin::Bin;
+
 use JubJub::DB;
+
+chdir($FindBin::Bin);
 
 my $config;
 my $options = {};

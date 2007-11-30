@@ -53,7 +53,11 @@ unless (-f $options->{'config'}) {
     exit;
 }
 
-$config = XMLin($options->{'config'}, 'ForceArray' => ['processor'], 'KeyAttr' => ['type'], 'ContentKey' => '-content');
+$config = eval { XMLin($options->{'config'}, 'ForceArray' => ['processor'], 'KeyAttr' => ['type'], 'ContentKey' => '-content') };
+if ($@) {
+    print STDERR "Bad configuration format.\n";
+    exit;
+}
 
 if (-f $config->{'service'}->{'pid_file'}) {
     print STDERR "Found pid file $config->{'service'}->{'pid_file'}. JubJub already running?\n";

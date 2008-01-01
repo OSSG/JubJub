@@ -1,5 +1,5 @@
 # JubJub - XMPP packages logger - database interaction module
-# Copyright (C) 2007 Fedor A. Fetisov <faf@ossg.ru>. All Rights Reserved
+# Copyright (C) 2007, 2008 Fedor A. Fetisov <faf@ossg.ru>. All Rights Reserved
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

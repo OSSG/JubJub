@@ -40,7 +40,7 @@ sub action {
     my $self = shift;
     my $message = shift;
 
-# проверка на наличие полезной информации в сообщении - иначе это пустое сообщение вида <composing/>
+# check for valuable information in the message - it can be just empty message like <composing/>
     return unless $message->{'body'} || $message->{'subject'};
 
     my $current_message = Dumper($message);
@@ -52,7 +52,7 @@ sub action {
     $message->{'type'} ||= 'normal';
 
     foreach ('from', 'to') {
-# проверка на необходимость записи сообщения
+# check if we really need to log this message
 	my $jid = ${$self->{'db'}}->sql_select('select * from jubjub_jids where jid=?', $participants->{$_}->{'jid'})->[0];
 	if (defined $jid->{'id'}) {
 	    return 0 unless $jid->{'log_messages'};
@@ -63,14 +63,14 @@ sub action {
 	    $jid = ${$self->{'db'}}->sql_select('select * from jubjub_jids where jid=?', $participants->{$_}->{'jid'})->[0];
 	    return -1 unless defined $jid->{'id'};
 	}
-# проверка ресурса
+# resource check
 	my $resource = ${$self->{'db'}}->sql_select('select * from jubjub_resources where resource=?', $participants->{$_}->{'resource'})->[0];
 	unless (defined $resource->{'id'}) {
 	    ${$self->{'db'}}->sql_exec('insert into jubjub_resources(resource) values (?)', $participants->{$_}->{'resource'});
 	    $resource = ${$self->{'db'}}->sql_select('select * from jubjub_resources where resource=?', $participants->{$_}->{'resource'})->[0];
 	    return -2 unless defined $resource->{'id'};
 	}
-# проверка участника (и с jid, и ресурсом)
+# participant check (by jid and by resource)
 	my $participant = ${$self->{'db'}}->sql_select('select * from jubjub_participants where resource=? and jid=?', $resource->{'id'}, $jid->{'id'})->[0];
 	unless (defined $participant->{'id'}) {
 	    ${$self->{'db'}}->sql_exec('insert into jubjub_participants(resource, jid) values (?, ?)', $resource->{'id'}, $jid->{'id'});

@@ -1,0 +1,49 @@
+JubJub
+======
+
+Script for server side logging XMPP-packages.
+
+Developed and tested for using with ejabberd server.
+
+Module architecture make it possible to flexible reassign handlers for
+different XMPP-packages types.
+
+Named after collateral character of the famous poem by L. Carroll.
+
+System requirements
+====================
+
+Script requires this Perl-modules:
+
+* Data::Dumper
+* DBI (+ DBD-module for chosen database backend)
+* Encode
+* FindBin
+* Getopt::Long
+* Net::Jabber
+* POSIX
+* XML::Simple
+
+Tested using MySQL 5.0 as database backend
+
+ejabberd setup for using JubJub
+================================
+
+In 'listen' section one should add:
+
+-------------------------------------------------------------------------------
+
+% External Logger
+    {5526, ejabberd_service, [{ip, {127, 0, 0, 1}},
+			    {access, all},
+                            {hosts, ["logger.somehost.somedomain"], [{password, "0123456789abcdef"}]}]}
+
+-------------------------------------------------------------------------------
+
+In 'modules' section one should add:
+
+-------------------------------------------------------------------------------
+
+    {mod_service_log, [{loggers, ["logger.somehost.somedomain"]}]}
+
+-------------------------------------------------------------------------------

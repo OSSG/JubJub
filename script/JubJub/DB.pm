@@ -20,23 +20,23 @@ use strict;
 
 use DBI;
 
-# метод-конструктор
-# возвращает объект с БД (параметры подключения задаются в конфигурации)
+# constructor method
+# returns object with database (connection params sets in config)
 sub new {
     my $package = shift;
     my $config = shift;
     my $self = {};
 
-# приготовление кеша запросов в БД
+# prepare cache for database requests
     $self->{'requests'} = {};
 
     my $options = { 'RaiseError' => 1,
 		    'ChopBlanks' => 1 };
 
-# для предотвращения проблем с Unicode при работе с mysql
+# to prevent troubles with mysql when using Unicode
     $options->{'mysql_enable_utf8'} = 1 if ($config->{'driver'} eq 'mysql');
 
-# установка соединения с начальной базой
+# establishing database connection
     unless (${$self->{'database'}} = DBI->connect('dbi:' . $config->{'driver'} .
 					    ':dbname=' . $config->{'name'} .
 					    ';host=' . $config->{'host'},
@@ -48,7 +48,7 @@ sub new {
 	exit;
     }
 
-# для предотвращения автоматического разрыва умным mysql соединения по тайм-ауту (т.н. 'morning bug')
+# to prevent automated disconnect after timeout by 'smart' mysql (so called 'morning bug')
     ${$self->{'database'}}->{'mysql_auto_reconnect'} = 1 if ($config->{'driver'} eq 'mysql');
 
     $self = bless($self, $package);
@@ -56,26 +56,26 @@ sub new {
     return $self;
 }
 
-# метод для выполнения запроса к БД, не предполагающего получение какой либо выборки
+# method for execution a database request that should not provide any data selection
 # (update / insert / delete и т.д.)
-# аргументы: первый (опционально) - флаг кеширования запроса в виде массива из одного элемента
-# (по умолчанию запрос кешируется)
-# затем - запрос и массив подстановочных данных (на место плейсхолдеров)
-# примеры: $database->sql_exec([0], 'select 1');
-# возвращает 0 в случае ошибки запроса, либо 1 в случае успешного выполнения запроса
+# args: first (optional) - flag to cache the request (in the form of one element array)
+# (by default request is caching)
+# next - request and data array for placeholders substitution
+# examples: $database->sql_exec([0], 'select 1');
+# returns 0 on error, or 1 on success
 sub sql_exec {
     my $self = shift;
     my $request = shift;
-# определение необходимости кеширования запроса
+# should request to be cached?
     my $cache = 1;
     if (ref($request) eq 'ARRAY') {
 	$cache = $request->[0];
 	$request = shift;
     }
     my @args = @_;
-# вызов внутреннего метода непосредственного выполнения запроса
+# internal method call (for direct request execution)
     my $res = $self->_request($request, @args);
-# не кешировать запрос, если указано
+# do not cache request if specified
     if ((defined $cache) && ($cache == 0)) {
 	$self->{'requests'}->{$request}->finish();
 	delete $self->{'requests'}->{$request};
@@ -85,15 +85,15 @@ sub sql_exec {
 
 }
 
-# метод для выполнения запроса к БД, предполагающих получение какой либо выборки (select)
-# аргументы: первый (опционально) - флаг кеширования запроса в виде массива из одного элемента.
-# (по умолчанию запрос кешируется)
-# затем - запрос и массив подстановочных данных (на место плейсхолдеров)
-# возвращает массив хешей, каждый из которых содержит в себе все данные одной строки выборки
+# method for execution a database request that should provide some data selection
+# args: first (optional) - flag to cache the request (in the form of one element array)
+# (by default request is caching)
+# next - request and data array for placeholders substitution
+# returns array of hashes, one hash for one resulting data selection string
 sub sql_select {
     my $self = shift;
     my $request = shift;
-# определение необходимости кеширования запроса
+# should request to be cached?
     my $cache = 1;
     if (ref($request) eq 'ARRAY') {
 	$cache = $request->[0];
@@ -101,14 +101,14 @@ sub sql_select {
     }
     my @args = @_;
     my $res = [];
-# выполнение запроса к БД
+# database request execution
     if ($self->_request($request, @args)) {
-# формирование массива результата
+# making resulting array
 	while (my $temp = $self->{'requests'}->{$request}->fetchrow_hashref()) {
 	    push (@$res, $temp);
 	}
     }
-# не кешировать запрос, если указано
+# do not cache request if specified
     if ((defined $cache) && ($cache == 0)) {
 	$self->{'requests'}->{$request}->finish();
 	delete $self->{'requests'}->{$request};
@@ -116,38 +116,37 @@ sub sql_select {
     return $res;
 }
 
-# внутренний метод для выполнения произвольного запроса к БД
-# аргументы: запрос и массив подстановочных данных
-# (на место плейсхолдеров)
-# возвращает 1 в случае успешного запроса, 0 - в случае ошибки
+# internal method for arbitrary database request execution
+# args: request, data array for placeholders substitution
+# returns 1 on success, 0 on error
 sub _request {
     my $self = shift;
     my $request = shift;
     my @args = @_;
 
-# проверка на существование подключения к БД
+# check for database connection existance
     return 0 unless defined ${$self->{'database'}};
 
-# подготовка запроса
+# prepare request
     $self->{'requests'}->{$request} = ${$self->{'database'}}->prepare($request)
 				unless (defined $self->{'requests'}->{$request});
 
-# выполнение запроса
+# execute request
     return $self->{'requests'}->{$request}->execute(@args) ? 1 : 0;
 
 }
 
-# метод-деструктор
-# вызывается при уничтожении объекта
-# корректно (используя соответствующий метод объекта) закрывает соединение с базой данных
+# destructor method
+# it's called when object destroying
+# correctly (using corresponding object method) closes database connection
 sub DESTROY {
     my $self = shift;
 
-# проверить существование соединения
+# check for connection existance
     if (defined $self->{'database'}) {
-# проверить существование кешированных запросов
+# check for cached database requests existance
 	if (defined $self->{'requests'}) {
-# все кешированные запросы закрываются
+# closing all cached database requests
 	    foreach (keys %{$self->{'requests'}}) {
 		$self->{'requests'}->{$_}->finish();
 	    }
@@ -158,7 +157,7 @@ sub DESTROY {
 	return 1;
     }
     else {
-# соединение не существует
+# connection doesn't exists
 	return 0;
     }
 

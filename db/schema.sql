@@ -23,10 +23,14 @@ create table jubjub_jids (
     foreign key(jid_type) references jubjub_jid_types(id) on delete cascade on update cascade
 ) engine=InnoDB;
 
+create index jubjub_jids_jid_idx on jubjub_jids (jid);
+
 create table jubjub_resources (
     `id` integer unsigned not null auto_increment primary key,
     `resource` varchar(255)
 ) engine=InnoDB;
+
+create index jubjub_resources_resource_idx on jubjub_resources (resource);
 
 create table jubjub_participants (
     `id` integer unsigned not null auto_increment primary key,
@@ -58,6 +62,8 @@ create table jubjub_errors (
     `code` smallint unsigned not null default 0,
     `error_condition` varchar(255) not null default ''
 ) engine=InnoDB;
+
+create index jubjub_errors_code_condition_idx on jubjub_errors (code, error_condition);
 
 create table jubjub_messages (
     `id` integer unsigned not null auto_increment primary key,

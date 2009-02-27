@@ -95,8 +95,10 @@ sub action {
 	}
     }
 
-    ${$self->{'db'}}->sql_exec('insert into jubjub_messages(sender, rcpt, subject, body, message_id, message_time, message_type, thread, error) values (?, ?, ?, ?, ?, now(), (select id from jubjub_message_types where name=?), ?, ?)',
-				    $participants->{'from'}->{'id'}, $participants->{'to'}->{'id'}, $message->{'subject'} || '', $message->{'body'} || '', $message->{'id'} || '', $message->{'type'}, $message->{'thread'} || '', $error);
+    ${$self->{'db'}}->sql_exec('insert into jubjub_messages(sender, rcpt, subject, body, message_id, message_time, message_type, thread, error) values (?, ?, ?, ?, ?, now(),
+				    (select coalesce((select id from jubjub_message_types where name=?), (select id from jubjub_message_types where name=?))), ?, ?)',
+				    $participants->{'from'}->{'id'}, $participants->{'to'}->{'id'}, $message->{'subject'} || '', $message->{'body'} || '', $message->{'id'} || '',
+					$message->{'type'}, 'unknown', $message->{'thread'} || '', $error);
 
     $self->{'last_message'} = $current_message;	
 

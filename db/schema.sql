@@ -56,6 +56,8 @@ insert into jubjub_message_types (name) values ('groupchat');
 insert into jubjub_message_types (name) values ('error');
 -- 5 --
 insert into jubjub_message_types (name) values ('headline');
+-- 6 --
+insert into jubjub_message_types (name) values ('unknown');
 
 create table jubjub_errors (
     `id` smallint unsigned not null auto_increment primary key,

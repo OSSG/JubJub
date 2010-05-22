@@ -58,6 +58,8 @@ insert into jubjub_message_types (name) values ('error');
 insert into jubjub_message_types (name) values ('headline');
 -- 6 --
 insert into jubjub_message_types (name) values ('unknown');
+-- 7 --
+insert into jubjub_message_types (name) values ('message');
 
 create table jubjub_errors (
     `id` smallint unsigned not null auto_increment primary key,

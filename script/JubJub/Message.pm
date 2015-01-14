@@ -1,5 +1,5 @@
 # JubJub - XMPP packages logger - messages handler
-# Copyright (C) 2007, 2008 Fedor A. Fetisov <faf@ossg.ru>. All Rights Reserved
+# Copyright (C) 2007, 2008, 2015 Fedor A. Fetisov <faf@ossg.ru>. All Rights Reserved
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -78,6 +78,7 @@ sub action {
 	    return -3 unless defined $participant->{'id'};
 	}
 	$participants->{$_}->{'id'} = $participant->{'id'};
+	$participants->{$_}->{'jid_id'} = $jid->{'id'};
     }
 
     my $error = undef;
@@ -95,9 +96,9 @@ sub action {
 	}
     }
 
-    ${$self->{'db'}}->sql_exec('insert into jubjub_messages(sender, rcpt, subject, body, message_id, message_time, message_type, thread, error) values (?, ?, ?, ?, ?, now(),
+    ${$self->{'db'}}->sql_exec('insert into jubjub_messages(sender, sender_jid, rcpt, rcpt_jid, subject, body, message_id, message_time, message_type, thread, error) values (?, ?, ?, ?, ?, ?, ?, now(),
 				    (select coalesce((select id from jubjub_message_types where name=?), (select id from jubjub_message_types where name=?))), ?, ?)',
-				    $participants->{'from'}->{'id'}, $participants->{'to'}->{'id'}, $message->{'subject'} || '', $message->{'body'} || '', $message->{'id'} || '',
+				    $participants->{'from'}->{'id'}, $participants->{'from'}->{'jid_id'}, $participants->{'to'}->{'id'}, $participants->{'to'}->{'jid_id'}, $message->{'subject'} || '', $message->{'body'} || '', $message->{'id'} || '',
 					$message->{'type'}, 'unknown', $message->{'thread'} || '', $error);
 
     $self->{'last_message'} = $current_message;	

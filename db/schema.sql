@@ -72,7 +72,9 @@ create index jubjub_errors_code_condition_idx on jubjub_errors (code, error_cond
 create table jubjub_messages (
     `id` integer unsigned not null auto_increment primary key,
     `sender` integer unsigned not null,
+    `sender_jid` integer unsigned not null,
     `rcpt` integer unsigned not null,
+    `rcpt_jid` integer unsigned not null,
     `message_id` varchar(255) not null default '',
     `message_time` timestamp default 0,
     `subject` varchar(255) not null default '',
@@ -82,7 +84,9 @@ create table jubjub_messages (
     `error` smallint unsigned default null,
 
     foreign key(sender) references jubjub_participants(id) on delete cascade on update cascade,
+    foreign key(sender_jid) references jubjub_jids(id) on delete cascade on update cascade,
     foreign key(rcpt) references jubjub_participants(id) on delete cascade on update cascade,
+    foreign key(rcpt_jid) references jubjub_jids(id) on delete cascade on update cascade,
     foreign key(message_type) references jubjub_message_types(id) on delete cascade on update cascade,
     foreign key(error) references jubjub_errors(id) on delete cascade on update cascade
 ) engine=InnoDB;
